@@ -2,8 +2,8 @@ import json
 
 import numpy as np
 
-from stats.likelihood import loglike_stat, loglike_sys
-from utils.load_flux import read_flux_from_root
+from ..stats.likelihood import loglike_stat, loglike_sys
+from ..utils.load_flux import read_flux_from_root
 
 
 class Ensemble:

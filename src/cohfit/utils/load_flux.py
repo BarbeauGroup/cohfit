@@ -1,7 +1,7 @@
 import numpy as np
 import uproot
 
-from utils.histograms import rebin_histogram
+from .histograms import rebin_histogram
 
 def read_flux_from_root(params: dict, new_t_edges=None) -> dict:
     """

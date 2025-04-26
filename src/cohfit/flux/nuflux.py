@@ -1,5 +1,5 @@
 
-from flux.probabilities import Pab
+from .probabilities import Pab
 
 
 def oscillate_flux(flux: dict, oscillation_params: list[float]) -> dict:

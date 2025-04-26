@@ -20,7 +20,7 @@ def global_best_fit(ensemble, x0, bounds_l, bounds_u):
 
     return res_global
 
-def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds_u):
+def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds_u, nFCE=200):
     """"
     Feldman-Cousins method for calculating the p-value of a given point in parameter space.
     """
@@ -34,7 +34,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds
 
     ncores = int(os.environ.get('FC_NUM_CORES', 1))
     print("Using {} cores".format(ncores))
-    nFCE = 200 # TODO: parameter or calculate smartly ala nova
+    # nFCE = 200 # TODO: parameter or calculate smartly ala nova
     
     # param grid is always 3 dimensional mass ue4 umu4
     # param_grid = list(product(range(len(ue4_bins)), range(len(um4_bins)), range(len(mass_bins))))
