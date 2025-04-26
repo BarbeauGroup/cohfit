@@ -1,0 +1,14 @@
+{
+    "flux_file": "data/snsFlux2D.root",
+    "nus_per_pot": {
+            "nuE": 0.0848,
+            "nuEBar": 0.0001,
+            "nuMu": 0.0848,
+            "nuMuBar": 0.0848,
+            "nuTau": 0.0,
+            "nuTauBar": 0.0,
+            "nuS": 0.0,
+            "nuSBar": 0.0
+        },
+    "time_edges": [0, 16025, 25]
+}
