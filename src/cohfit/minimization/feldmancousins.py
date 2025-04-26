@@ -8,6 +8,12 @@ from tqdm import tqdm
 from multiprocessing import Pool
 import os
 from scipy.stats import chi2
+from scipy.special import gammaincc as gammaQ
+
+def guess_nfce(u, lambda_star, dof=3):
+    print(gammaQ(dof/2, lambda_star/2))
+    print(1 - gammaQ(dof/2, lambda_star/2))
+    return (1 - gammaQ(dof/2, lambda_star/2)) * gammaQ(dof/2, lambda_star/2) / u**2
 
 def global_best_fit(ensemble, x0, bounds_l, bounds_u):
     # Global best fit theta_hat, phi_hat
@@ -20,7 +26,7 @@ def global_best_fit(ensemble, x0, bounds_l, bounds_u):
 
     return res_global
 
-def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds_u, nFCE=200):
+def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds_u, maxFCE=10000):
     """"
     Feldman-Cousins method for calculating the p-value of a given point in parameter space.
     """
@@ -41,7 +47,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds
     alpha_grid = np.zeros((len(ue4_bins), len(um4_bins), len(mass_bins)), dtype=float)
     lambda_crit_grid = np.zeros((len(ue4_bins), len(um4_bins), len(mass_bins)), dtype=float)
     lstar_grid = np.zeros((len(ue4_bins), len(um4_bins), len(mass_bins)), dtype=float)
-    alpha_conv_grid = np.zeros((len(ue4_bins), len(um4_bins), len(mass_bins), nFCE), dtype=float)
+    # alpha_conv_grid = np.zeros((len(ue4_bins), len(um4_bins), len(mass_bins), maxFCE), dtype=float)
     phi_grid = np.zeros((len(ue4_bins), len(um4_bins), len(mass_bins), len(x0)-3), dtype=float)
     bounds = Bounds(bounds_l, bounds_u, keep_feasible=True)
 
@@ -90,16 +96,22 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds
                 # need to create a dataset for this gridpoint
                 local_asimov_data = ensemble.analysis_hists(res_data.x, mass, Ue4_2, Um4_2, set_data_hist=False)
 
-                input_arr = np.zeros(nFCE, dtype=float)
+                nfce_guess = guess_nfce(0.03, lambda_star, 3)
+                print("\tlambda_star", lambda_star)
+                print("\tnFCE guess", nfce_guess)
+                nFCE = min(nfce_guess, maxFCE)
+
+                input_arr = np.zeros(int(nFCE), dtype=float)
                 with Pool(ncores) as pool:
                     lambda_arr = np.asarray(list(tqdm(
                         pool.map(partial(
                             run_pseudoexperiment, ensemble=ensemble, x0=x0, local_asimov_data=local_asimov_data, phi_i_hathat=res_data.x, theta_i=(mass, Ue4_2, Um4_2), bounds=bounds, local_bounds=Bounds(local_bl, local_bu, keep_feasible=True)),
-                            input_arr, chunksize=nFCE//ncores), total=nFCE)))
+                            input_arr, chunksize=nFCE // ncores), total=nFCE)))
 
                 # calculate alpha; the fraction of that have lambda greater than res_data
+                print(lambda_arr)
                 alpha = np.sum(lambda_arr > lambda_star) / nFCE
-                alpha_conv = np.cumsum(lambda_arr > lambda_star) / np.arange(1, nFCE+1)
+                alpha_conv = np.cumsum(lambda_arr > lambda_star) / np.arange(1, nFCE + 1)
 
                 # calculate the FC (1 sigma) critical chi^2
                 crit_val = 0.6826894921370859
@@ -110,14 +122,14 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds
 
                 alpha_grid[i, j, k] = alpha
                 lambda_crit_grid[i, j, k] = lambda_crit
-                alpha_conv_grid[i, j, k] = alpha_conv
+                # alpha_conv_grid[i, j, k] = alpha_conv
 
                 et = time()
                 times.append(et-st)
                 print("\ttime elapsed", et-st, "seconds")
 
     print("Average time per grid point", np.mean(times), "seconds")
-    return res_global, alpha_grid, lstar_grid, alpha_conv_grid, lambda_crit_grid, phi_grid
+    return res_global, alpha_grid, lstar_grid, lambda_crit_grid, phi_grid
 
 def run_pseudoexperiment(_, /, ensemble, x0, local_asimov_data, phi_i_hathat, theta_i, bounds, local_bounds):
     np.random.seed() # new seed for each thread
