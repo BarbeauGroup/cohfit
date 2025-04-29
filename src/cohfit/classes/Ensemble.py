@@ -9,7 +9,7 @@ from ..utils.load_flux import read_flux_from_root
 class Ensemble:
     def __init__(self, config_file):
         with open(config_file, 'r') as f:
-            if config_file.endswith(".json"):
+            if config_file.endswith(".json") or config_file.endswith(".json5"):
                 self.params = json.load(f)
             else:
                 raise ValueError("Only JSON config files are supported right now")
