@@ -2,7 +2,7 @@ import numpy as np
 
 def loglike_stat(experiment, predicted, observed=None) -> float:
     if observed is None:
-        observed = experiment.data_hist[1]
+        observed = experiment.data_hist
 
     with np.errstate(all="ignore"):
         logterm = np.where(observed > 0, observed * np.log(observed / predicted), 0) # replace with 0 when observed bins are 0 (see pdg)

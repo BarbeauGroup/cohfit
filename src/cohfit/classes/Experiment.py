@@ -40,6 +40,9 @@ class Experiment:
     def set_background_function(self, key, background_function):
         self.background_functions[key] = background_function
 
+    def set_data_hist(self, hist):
+        self.data_hist = hist
+
     def calculate_predicted(self, flux, mass, ue4, umu4, fit_params, set_data_hist=False, plot_hists=False):
         ll_hists = {}
 
@@ -52,19 +55,6 @@ class Experiment:
         nu_obs = self.signal_function(flux=osc_flux, params=self.params, nuisance_params=fit_params, flavorblind=True)
         ll_hists["signal"] = nu_obs["combined"]
 
-        # # Create backgrounds
-        # if "brn" in self.base_hists.keys():
-        #     brn_obs = create_brn_observables(self, fit_params)
-        #     ll_hists["brn"] = brn_obs
-        #
-        # if "nin" in self.base_hists.keys():
-        #     nin_obs = create_nin_observables(self, fit_params)
-        #     ll_hists["nin"] = nin_obs
-        #
-        # if "ssb" in self.base_hists.keys():
-        #     ## ssb_obs trivial
-        #     ll_hists["ssb"] = self.base_hists["ssb"]
-
         for k in self.background_functions.keys():
             ll_hists[k] = self.background_functions[k](fit_params)
 
@@ -75,12 +65,12 @@ class Experiment:
                 flux_nuisance += fit_params[k]
 
         predicted = 0
-        predicted += ll_hists["signal"][1] * flux_nuisance
+        predicted += ll_hists["signal"] * flux_nuisance
 
         for k in ll_hists.keys():
             if k == "signal":
                 continue
-            predicted += ll_hists[k][1] * (
+            predicted += ll_hists[k] * (
                 1 + fit_params.get("{}_{}".format(k, self.params['name']), 0)
             )
 
@@ -96,26 +86,12 @@ class Experiment:
             for k in ll_hists.keys():
                 if k == "signal":
                     # both oscillated and unoscillated histograms get multiplied by the flux nuisance
-                    self.plot_hists["signal"] = (
-                        self.plot_hists["signal"][0],
-                        self.plot_hists["signal"][1] * flux_nuisance,
-                    )
-                    self.unosc_plot_hists["signal"] = (
-                        self.unosc_plot_hists["signal"][0],
-                        self.unosc_plot_hists["signal"][1] * flux_nuisance,
-                    )
+                    self.plot_hists["signal"] = self.plot_hists["signal"] * flux_nuisance
+                    self.unosc_plot_hists["signal"] = self.unosc_plot_hists["signal"] * flux_nuisance
                     continue
 
-                self.plot_hists[k] = (
-                    self.plot_hists[k][0],
-                    self.plot_hists[k][1]
-                    * (1 + fit_params.get("{}_{}".format(k, self.params['name']), 0)),
-                )
-                self.unosc_plot_hists[k] = (
-                    self.unosc_plot_hists[k][0],
-                    self.unosc_plot_hists[k][1]
-                    * (1 + fit_params.get("{}_{}".format(k, self.params['name']), 0)),
-                )
+                self.plot_hists[k] =  self.plot_hists[k] * (1 + fit_params.get("{}_{}".format(k, self.params['name']), 0))
+                self.unosc_plot_hists[k] = self.unosc_plot_hists[k] * (1 + fit_params.get("{}_{}".format(k, self.params['name']), 0))
 
             # DEBUG
             # total_counts = 0
@@ -127,7 +103,7 @@ class Experiment:
 
         if set_data_hist:
             # this is for if we're calculating a new model/dataset
-            self.data_hist = ((np.asarray(self.params["analysis"]["energy_bins"]), np.asarray(self.params["analysis"]["time_bins"])), predicted)
+            self.data_hist = predicted
 
         return predicted
 
