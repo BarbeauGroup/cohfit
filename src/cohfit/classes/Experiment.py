@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 import numpy as np
-import json
+import pyjson5 as json
 
 from ..flux.nuflux import oscillate_flux
 from ..utils.num_atoms import num_atoms

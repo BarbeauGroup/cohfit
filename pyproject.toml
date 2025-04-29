@@ -50,6 +50,7 @@ dependencies = [
   "tqdm",
   "uproot",
   "xxhash",
+  "pyjson5"
 ]
 
 [project.urls]
