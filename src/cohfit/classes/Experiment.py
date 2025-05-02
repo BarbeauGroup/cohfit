@@ -21,6 +21,10 @@ class Experiment:
         
         self.params["detector"]["detector_matrix"] = np.load(self.params["detector"]["detector_matrix"])
 
+        # TODO: make matrix loading generic or a function or something
+        if "f90_matrix" in self.params["detector"]:
+            self.params["detector"]["f90_matrix"] = np.load(self.params["detector"]["f90_matrix"])
+
         # self.observable_energy_bins = np.asarray(self.params["analysis"]["energy_bins"])
         # self.observable_time_bins = np.asarray(self.params["analysis"]["time_bins"])
 
