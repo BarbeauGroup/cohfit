@@ -11,8 +11,7 @@ from scipy.stats import chi2
 from scipy.special import gammaincc as gammaQ
 
 def guess_nfce(u, lambda_star, dof=3):
-    print(gammaQ(dof/2, lambda_star/2))
-    print(1 - gammaQ(dof/2, lambda_star/2))
+    lambda_star = np.abs(lambda_star)
     return (1 - gammaQ(dof/2, lambda_star/2)) * gammaQ(dof/2, lambda_star/2) / u**2
 
 def global_best_fit(ensemble, x0, bounds_l, bounds_u):
@@ -26,7 +25,7 @@ def global_best_fit(ensemble, x0, bounds_l, bounds_u):
 
     return res_global
 
-def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds_u, maxFCE=10000):
+def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds_u, minFCE=2, maxFCE=10000):
     """"
     Feldman-Cousins method for calculating the p-value of a given point in parameter space.
     """
@@ -99,7 +98,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds
                 nfce_guess = guess_nfce(0.03, lambda_star, 3)
                 print("\tlambda_star", lambda_star)
                 print("\tnFCE guess", nfce_guess)
-                nFCE = min(nfce_guess, maxFCE)
+                nFCE = max(min(nfce_guess, maxFCE), minFCE)
 
                 input_arr = np.zeros(int(nFCE), dtype=float)
                 with Pool(ncores) as pool:
