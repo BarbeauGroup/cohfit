@@ -98,9 +98,9 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, mass_bins, bounds_l, bounds
                 nfce_guess = guess_nfce(0.03, lambda_star, 3)
                 print("\tlambda_star", lambda_star)
                 print("\tnFCE guess", nfce_guess)
-                nFCE = max(min(nfce_guess, maxFCE), minFCE)
+                nFCE = int(max(min(nfce_guess, maxFCE), minFCE))
 
-                input_arr = np.zeros(int(nFCE), dtype=float)
+                input_arr = np.zeros(nFCE, dtype=float)
                 with Pool(ncores) as pool:
                     lambda_arr = np.asarray(list(tqdm(
                         pool.map(partial(
@@ -146,13 +146,13 @@ def run_pseudoexperiment(_, /, ensemble, x0, local_asimov_data, phi_i_hathat, th
     # minimize l1 allowing phi to vary (with theta fixed to theta_i)
     initial_guess_phi = phi_i_hathat # phi_i_hathat
     res1 = iminuit.minimize(ensemble, initial_guess_phi, (mass, Ue4_2, Um4_2, poisson_hists, False), bounds=local_bounds)
-    print("\tl1 (theta_i fixed, phi varied)", res1.x, res1.fun)
+    # print("\tl1 (theta_i fixed, phi varied)", res1.x, res1.fun)
 
     # minimize l2 allowing theta AND phi to vary
     res2 = iminuit.minimize(ensemble, x0, (None, None, None , poisson_hists, False), bounds=bounds)
-    print("\tl2 (both varied)", res2.x, res2.fun)
+    # print("\tl2 (both varied)", res2.x, res2.fun)
 
     # calculate lambda_ij = l1 - l2 for a given PE j
     lambda_ij = res1.fun - res2.fun
-    print("\t\tlambda_ij", lambda_ij)
+    # print("\t\tlambda_ij", lambda_ij)
     return lambda_ij
