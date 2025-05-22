@@ -83,15 +83,27 @@ class Experiment:
             self.plot_hists = deepcopy(ll_hists)
             self.unosc_plot_hists = deepcopy(ll_hists)
 
-            # If we want to create the plot hists, we create an unoscillated neutrino spectrum
-            unosc_nu_obs = self.signal_function(flux=flux, params=self.params, nuisance_params=fit_params, flavorblind=True)
-            self.unosc_plot_hists["signal"] = unosc_nu_obs["combined"]
+            # If we want to create the plot hists, we create an oscillated and unoscillated neutrino flavor spectrum
+            nu_obs = self.signal_function(flux=osc_flux, params=self.params, nuisance_params=fit_params, flavorblind=False)
+            unosc_nu_obs = self.signal_function(flux=flux, params=self.params, nuisance_params=fit_params, flavorblind=False)
+            self.plot_hists["signal"] = nu_obs
+            self.unosc_plot_hists["signal"] = unosc_nu_obs
 
             for k in ll_hists.keys():
                 if k == "signal":
                     # both oscillated and unoscillated histograms get multiplied by the flux nuisance
-                    self.plot_hists["signal"] = self.plot_hists["signal"] * flux_nuisance
-                    self.unosc_plot_hists["signal"] = self.unosc_plot_hists["signal"] * flux_nuisance
+                    for nu in self.plot_hists["signal"].keys():
+                        if nu not in self.params["detector"]["observable_flavors"]:
+                            continue
+                        self.plot_hists[nu] = self.plot_hists["signal"][nu] * flux_nuisance
+                    for nu in self.unosc_plot_hists["signal"].keys():
+                        if nu not in self.params["detector"]["observable_flavors"]:
+                            continue
+                        self.unosc_plot_hists[nu] = self.unosc_plot_hists["signal"][nu] * flux_nuisance
+
+                    # remove the signal from the plot hists
+                    del self.plot_hists["signal"]
+                    del self.unosc_plot_hists["signal"]
                     continue
 
                 self.plot_hists[k] =  self.plot_hists[k] * (1 + fit_params.get("{}_{}".format(k, self.params['name']), 0))

@@ -83,32 +83,3 @@ def centers_to_edges(centers):
 def edges_to_centers(edges):
     edges = np.asarray(edges)
     return (edges[1:] + edges[:-1]) / 2
-    """
-    Calculate the total counts in an n-dimensional histogram with uneven bin widths.
-
-    Parameters:
-        histogram (ndarray): An n-dimensional array of histogram counts.
-        bins (list of arrays): A list of arrays, each representing the bin edges along one dimension.
-
-    Returns:
-        total_counts (float): The total counts in the histogram.
-    """
-    # Validate dimensions
-    if len(bins) != histogram.ndim:
-        raise ValueError("Number of bin arrays must match the dimensionality of the histogram.")
-
-    # Calculate bin widths along each dimension
-    bin_widths = [np.diff(b) for b in bins]
-
-    # Create a meshgrid of bin widths
-    bin_width_mesh = np.meshgrid(*bin_widths, indexing='ij')
-
-    # Calculate bin volumes (product of widths along each dimension)
-    bin_volumes = histogram
-    for i in range(len(bin_width_mesh)):
-        bin_volumes *= bin_width_mesh[i]
-
-    # Multiply histogram counts by bin volumes to get total counts
-    total_counts = np.sum(bin_volumes)
-
-    return total_counts
