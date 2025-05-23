@@ -7,6 +7,8 @@
 [//]: # ()
 [//]: # (-----)
 
+[Github](https://github.com/BarbeauGroup/cohfit) is the canonical repository for now, please don't push to this repository.
+
 ## Table of Contents
 
 - [Installation](#installation)
