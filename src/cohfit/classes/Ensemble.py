@@ -27,7 +27,7 @@ class Ensemble:
     def set_nuisance_params(self, nuisance_params):
         self.nuisance_params = nuisance_params
     
-    def analysis_hists(self, x, mass=None, ue4=None, umu4=None, set_data_hist=False, plot_hists=False):
+    def analysis_hists(self, x, mass=None, ue4=None, umu4=None, ut4=None, set_data_hist=False, plot_hists=False):
         fit_params = dict(zip(self.nuisance_params, x))
         if mass is None:
             mass = fit_params["mass"]
@@ -35,15 +35,17 @@ class Ensemble:
             ue4 = fit_params["ue4"]
         if umu4 is None:
             umu4 = fit_params["umu4"]
+        if ut4 is None:
+            ut4 = fit_params["ut4"]
 
         ret_arr = []
         for experiment in self.experiments:
-            ret_arr.append(experiment.calculate_predicted(self.flux, mass, ue4, umu4, fit_params, set_data_hist=set_data_hist, plot_hists=plot_hists))
+            ret_arr.append(experiment.calculate_predicted(self.flux, mass, ue4, umu4, ut4, fit_params, set_data_hist=set_data_hist, plot_hists=plot_hists))
         return ret_arr
 
     # TODO :
     # If there's no time offset, pull create observables out
-    def __call__(self, x, mass=None, ue4=None, umu4=None, observed_hists=None, include_sys=True):
+    def __call__(self, x, mass=None, ue4=None, umu4=None, ut4=None, observed_hists=None, include_sys=True):
         # Extract the parameters from x
         if mass is None:
             mass = x[0]
@@ -54,9 +56,15 @@ class Ensemble:
         if umu4 is None:
             umu4 = x[0]
             x = x[1:]
+        if ut4 is None:
+            ut4 = x[0]
+            x = x[1:]
+
+        if ue4 + umu4 + ut4 > 1.0:
+            return np.inf  # This is a hard constraint, so we return inf if it's violated
 
         # Make the model
-        predicted_hists = self.analysis_hists(x, mass, ue4, umu4)
+        predicted_hists = self.analysis_hists(x, mass, ue4, umu4, ut4)
 
         # Need to do this for zip to work
         if observed_hists is None:

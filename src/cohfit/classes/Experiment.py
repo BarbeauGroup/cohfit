@@ -47,11 +47,11 @@ class Experiment:
     def set_data_hist(self, hist):
         self.data_hist = hist
 
-    def calculate_predicted(self, flux, mass, ue4, umu4, fit_params, set_data_hist=False, plot_hists=False):
+    def calculate_predicted(self, flux, mass, ue4, umu4, ut4, fit_params, set_data_hist=False, plot_hists=False):
         ll_hists = {}
 
         # Modify the neutrino spectrum before detector effects
-        osc_params = [self.params["detector"]["distance"], mass, ue4, umu4, 0.0]
+        osc_params = [self.params["detector"]["distance"], mass, ue4, umu4, ut4]
         osc_flux = oscillate_flux(flux=flux, oscillation_params=osc_params) # TODO: make it take fit_params too
 
         # Create the signal
