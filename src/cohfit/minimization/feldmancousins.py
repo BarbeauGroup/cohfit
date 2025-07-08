@@ -14,6 +14,9 @@ def guess_nfce(u, lambda_star, dof=3):
     lambda_star = np.abs(lambda_star)
     return (1 - gammaQ(dof/2, lambda_star/2)) * gammaQ(dof/2, lambda_star/2) / u**2
 
+def calc_variance(p, n):
+    return p * (1 - p) / n if n > 0 else 0
+
 def global_best_fit(ensemble, x0, bounds_l, bounds_u):
     # Global best fit theta_hat, phi_hat
     bounds = Bounds(bounds_l, bounds_u, keep_feasible=True)
@@ -46,8 +49,9 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
     # param grid is always 3 dimensional mass ue4 umu4
     # param_grid = list(product(range(len(ue4_bins)), range(len(um4_bins)), range(len(mass_bins))))
     alpha_grid = np.zeros((len(ue4_bins), len(um4_bins), len(ut4_bins), len(mass_bins)), dtype=float)
-    lambda_crit_grid = np.zeros((len(ue4_bins), len(um4_bins), len(ut4_bins), len(mass_bins)), dtype=float)
+    c_grid = np.zeros((len(ue4_bins), len(um4_bins), len(ut4_bins), len(mass_bins)), dtype=float)
     lstar_grid = np.zeros((len(ue4_bins), len(um4_bins), len(ut4_bins), len(mass_bins)), dtype=float)
+    variance_grid = np.zeros((len(ue4_bins), len(um4_bins), len(ut4_bins), len(mass_bins)), dtype=float)
     # alpha_conv_grid = np.zeros((len(ue4_bins), len(um4_bins), len(mass_bins), maxFCE), dtype=float)
     phi_grid = np.zeros((len(ue4_bins), len(um4_bins), len(ut4_bins), len(mass_bins), len(x0)-4), dtype=float)
     bounds = Bounds(bounds_l, bounds_u, keep_feasible=True)
@@ -72,7 +76,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
                         lstar_grid[i, j, k, l] = np.inf
                         phi_grid[i, j, k, l] = np.zeros(len(x0)-4)
                         alpha_grid[i, j, k, l] = 0
-                        lambda_crit_grid[i, j, k, l] = np.inf
+                        c_grid[i, j, k, l] = np.inf
                         continue
 
                     grid_point_n = (i*len(um4_bins)*len(ut4_bins)*len(mass_bins)
@@ -97,7 +101,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
 
                     print("\tphihathat_i (best fit nuisance params for grid point)", local_phi)
                     print("\tcost", local_cost)
-                    lambda_star = local_cost - global_cost
+                    lambda_star = local_cost - global_cost # lambda_i
                     lstar_grid[i, j, k, l] = lambda_star
                     phi_grid[i, j, k, l] = local_phi
 
@@ -124,19 +128,22 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
                                 input_arr), total=nFCE)))
 
                     # calculate alpha; the fraction of that have lambda greater than res_data
-                    print(lambda_arr)
-                    alpha = np.sum(lambda_arr > lambda_star) / nFCE
-                    alpha_conv = np.cumsum(lambda_arr > lambda_star) / np.arange(1, nFCE + 1)
+                    print(lambda_arr) # lambda_ij
+                    alpha = np.sum(lambda_arr < lambda_star) / nFCE
+                    alpha_conv = np.cumsum(lambda_arr < lambda_star) / np.arange(1, nFCE + 1)
 
                     # calculate the FC (1 sigma) critical chi^2
                     crit_val = 0.6826894921370859
-                    nominal_chi2 = chi2.ppf(crit_val, 3)
-                    lambda_crit = np.percentile(lambda_arr, crit_val*100)
+                    nominal_chi2 = chi2.ppf(crit_val, 4)
+                    c_alpha = np.percentile(lambda_arr, crit_val*100)
+                    variance = calc_variance(alpha, nFCE)
 
-                    print("\talpha", alpha, "lambda_star", lambda_star, "lambda_crit", lambda_crit, "FC correction:", lambda_crit - nominal_chi2)
+                    print("\talpha", alpha, "Var_alpha", variance, "lambda_star", lambda_star,
+                          "c_alpha", c_alpha, "FC correction:", c_alpha - nominal_chi2)
 
                     alpha_grid[i, j, k, l] = alpha
-                    lambda_crit_grid[i, j, k, l] = lambda_crit
+                    c_grid[i, j, k, l] = c_alpha
+                    variance_grid[i, j, k, l] = variance
                     # alpha_conv_grid[i, j, k] = alpha_conv
 
                     et = time()
@@ -144,7 +151,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
                     print("\ttime elapsed", et-st, "seconds")
 
     print("Average time per grid point", np.mean(times), "seconds")
-    return res_global, alpha_grid, lstar_grid, lambda_crit_grid, phi_grid
+    return res_global, alpha_grid, lstar_grid, c_grid, phi_grid, variance_grid
 
 def run_pseudoexperiment(_, /, ensemble, x0, local_asimov_data, phi_i_hathat, theta_i, bounds, local_bounds):
     np.random.seed() # new seed for each thread
