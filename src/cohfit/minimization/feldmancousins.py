@@ -105,7 +105,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
                     lstar_grid[i, j, k, l] = lambda_star
                     phi_grid[i, j, k, l] = local_phi
 
-                    if lambda_star > 50:
+                    if lambda_star > 20:
                         alpha_grid[i, j, k, l] = 0 # wilks likelihood is big, so we skip FC
                         print("\tSkipping grid point because lambda_star is", lambda_star)
                         continue
