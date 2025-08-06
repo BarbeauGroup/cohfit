@@ -30,7 +30,7 @@ def global_best_fit(ensemble, x0, bounds_l, bounds_u):
 
     return res_global
 
-def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds_l, bounds_u, minFCE=2, maxFCE=10000):
+def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds_l, bounds_u, dof, minFCE=2, maxFCE=10000):
     """"
     Feldman-Cousins method for calculating the p-value of a given point in parameter space.
     """
@@ -113,7 +113,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
                     # need to create a dataset for this gridpoint
                     local_asimov_data = ensemble.analysis_hists(res_data.x, mass, Ue4_2, Um4_2, Ut4_2, set_data_hist=False)
 
-                    nfce_guess = guess_nfce(0.03, lambda_star, 4)
+                    nfce_guess = guess_nfce(0.03, lambda_star, dof)
                     print("\tlambda_star", lambda_star)
                     print("\tnFCE guess", nfce_guess)
                     nFCE = int(max(min(nfce_guess, maxFCE), minFCE))
@@ -134,7 +134,7 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
 
                     # calculate the FC (1 sigma) critical chi^2
                     crit_val = 0.6826894921370859
-                    nominal_chi2 = chi2.ppf(crit_val, 4)
+                    nominal_chi2 = chi2.ppf(crit_val, dof)
                     c_alpha = np.percentile(lambda_arr, crit_val*100)
                     variance = calc_variance(alpha, nFCE)
 
