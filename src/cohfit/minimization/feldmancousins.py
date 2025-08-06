@@ -62,6 +62,8 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
     res_global = global_best_fit(ensemble, x0, bounds_l, bounds_u)
     global_cost = res_global.fun
 
+    sm_calc = False
+
     for i in range(len(ue4_bins)):
         for j in range(len(um4_bins)):
             for k in range(len(ut4_bins)):
@@ -70,6 +72,11 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
                     Um4_2 = um4_bins[j]
                     Ut4_2 = ut4_bins[k]
                     mass = mass_bins[l]
+
+                    if mass == 0:
+                        if sm_calc:
+                            continue
+                        sm_calc = True
 
                     if (Ue4_2 + Um4_2 + Ut4_2 > 1.0):
                         print("Skipping grid point because Ue4 + Umu4 + Utau4 > 1.0")
