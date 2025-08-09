@@ -25,7 +25,7 @@ def global_best_fit(ensemble, x0, bounds_l, bounds_u):
 
     res_global = minimize(ensemble, x0, bounds=bounds) # TODO: think about basinhopping or other stuff.. and bounds maybe. and initial guess.
 
-    print("Global best fit", res_global.x, ensemble(res_global.x[4:], res_global.x[0], res_global.x[1], res_global.x[2], res_global.x[3]))
+    print("Global best fit", res_global.x, ensemble(res_global.x))
     print("Global best fit cost", res_global.fun)
 
     return res_global
@@ -113,19 +113,23 @@ def feldmancousins(ensemble, x0, ue4_bins, um4_bins, ut4_bins, mass_bins, bounds
                     phi_grid[i, j, k, l] = local_phi
 
                     if lambda_star > 20:
-                        alpha_grid[i, j, k, l] = 0 # wilks likelihood is big, so we skip FC
+                        alpha_grid[i, j, k, l] = 1 # wilks likelihood is big, so we skip FC
                         print("\tSkipping grid point because lambda_star is", lambda_star)
                         continue
-
-                    # need to create a dataset for this gridpoint
-                    local_asimov_data = ensemble.analysis_hists(res_data.x, mass, Ue4_2, Um4_2, Ut4_2, set_data_hist=False)
 
                     nfce_guess = guess_nfce(0.03, lambda_star, dof)
                     print("\tlambda_star", lambda_star)
                     print("\tnFCE guess", nfce_guess)
-                    nFCE = int(max(min(nfce_guess, maxFCE), minFCE))
+                    nFCE = int(min(max(nfce_guess, minFCE), maxFCE))
                     print("\tnFCE", nFCE)
                     print()
+
+                    if (nFCE == 0):
+                        print("\tSkipping FC grid point because nFCE is 0")
+                        continue
+
+                    # need to create a dataset for this gridpoint
+                    local_asimov_data = ensemble.analysis_hists(res_data.x, mass, Ue4_2, Um4_2, Ut4_2, set_data_hist=False)
 
                     input_arr = np.zeros(nFCE, dtype=float)
                     with Pool(ncores) as pool:

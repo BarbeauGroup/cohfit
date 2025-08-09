@@ -65,7 +65,7 @@ class Experiment:
         ## Calculate the predicted histogram
         flux_nuisance = 1
         for k in fit_params.keys():
-            if k.startswith("flux"):
+            if k.startswith("flux_{}".format(self.params['name'])) or k == "flux":
                 flux_nuisance += fit_params[k]
 
         predicted = 0
