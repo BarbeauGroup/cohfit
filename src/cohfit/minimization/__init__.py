@@ -1,1 +1,1 @@
-from .feldmancousins import feldmancousins
+from .feldmancousins import feldmancousins, global_best_fit
