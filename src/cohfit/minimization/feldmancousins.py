@@ -20,7 +20,7 @@ def global_best_fit(ensemble, x0, bounds_l, bounds_u):
 
     res_global = iminuit.minimize(ensemble, x0, bounds=bounds) # TODO: think about basinhopping or other stuff.. and bounds maybe. and initial guess.
 
-    print("Global best fit", res_global.x, ensemble(res_global.x[3:], res_global.x[0], res_global.x[1], res_global.x[2]))
+    print("Global best fit", res_global.x)# ensemble(res_global.x[3:], res_global.x[0], res_global.x[1], res_global.x[2]))
     print("Global best fit cost", res_global.fun)
 
     return res_global

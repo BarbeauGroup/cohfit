@@ -47,26 +47,33 @@ class Experiment:
     def set_data_hist(self, hist):
         self.data_hist = hist
 
-    def calculate_predicted(self, flux, mass, ue4, umu4, fit_params, set_data_hist=False, plot_hists=False):
+    def calculate_predicted(self, flux, model_params, nuisance_params, set_data_hist=False, plot_hists=False):
         ll_hists = {}
 
+        # the model params are theta, the "fit_params" are the nuisance params
+        model_params = model_params
+
         # Modify the neutrino spectrum before detector effects
+        mass = 0.0
+        ue4 = 0.0
+        umu4 = 0.0
+
         osc_params = [self.params["detector"]["distance"], mass, ue4, umu4, 0.0]
-        osc_flux = oscillate_flux(flux=flux, oscillation_params=osc_params) # TODO: make it take fit_params too
+        osc_flux = flux #oscillate_flux(flux=flux, oscillation_params=osc_params) # TODO: make it take fit_params too
 
         # Create the signal
-        # nu_obs = create_neutrino_observables(flux=osc_flux, experiment=self, nuisance_params=fit_params, flavorblind=True, detector_effects=True)
-        nu_obs = self.signal_function(flux=osc_flux, params=self.params, nuisance_params=fit_params, flavorblind=True)
+        nu_obs = self.signal_function(flux=osc_flux, model_params=model_params, params=self.params, nuisance_params=nuisance_params)
+
         ll_hists["signal"] = nu_obs["combined"]
 
         for k in self.background_functions.keys():
-            ll_hists[k] = self.background_functions[k](fit_params)
+            ll_hists[k] = self.background_functions[k](nuisance_params)
 
         ## Calculate the predicted histogram
         flux_nuisance = 1
-        for k in fit_params.keys():
+        for k in nuisance_params.keys():
             if k.startswith("flux"):
-                flux_nuisance += fit_params[k]
+                flux_nuisance += nuisance_params[k]
 
         predicted = 0
         predicted += ll_hists["signal"] * flux_nuisance
@@ -75,7 +82,7 @@ class Experiment:
             if k == "signal":
                 continue
             predicted += ll_hists[k] * (
-                1 + fit_params.get("{}_{}".format(k, self.params['name']), 0)
+                1 + nuisance_params.get("{}_{}".format(k, self.params['name']), 0)
             )
 
         # Calculate the plotting histograms if required # TODO: pull out into separate function
@@ -84,8 +91,8 @@ class Experiment:
             self.unosc_plot_hists = deepcopy(ll_hists)
 
             # If we want to create the plot hists, we create an oscillated and unoscillated neutrino flavor spectrum
-            nu_obs = self.signal_function(flux=osc_flux, params=self.params, nuisance_params=fit_params, flavorblind=False)
-            unosc_nu_obs = self.signal_function(flux=flux, params=self.params, nuisance_params=fit_params, flavorblind=False)
+            nu_obs = self.signal_function(flux=osc_flux, model_params=model_params, params=self.params, nuisance_params=nuisance_params, flavorblind=False)
+            unosc_nu_obs = self.signal_function(flux=flux, model_params=model_params, params=self.params, nuisance_params=nuisance_params, flavorblind=False)
             self.plot_hists["signal"] = nu_obs
             self.unosc_plot_hists["signal"] = unosc_nu_obs
 
@@ -106,16 +113,9 @@ class Experiment:
                     del self.unosc_plot_hists["signal"]
                     continue
 
-                self.plot_hists[k] =  self.plot_hists[k] * (1 + fit_params.get("{}_{}".format(k, self.params['name']), 0))
-                self.unosc_plot_hists[k] = self.unosc_plot_hists[k] * (1 + fit_params.get("{}_{}".format(k, self.params['name']), 0))
+                self.plot_hists[k] =  self.plot_hists[k] * (1 + nuisance_params.get("{}_{}".format(k, self.params['name']), 0))
+                self.unosc_plot_hists[k] = self.unosc_plot_hists[k] * (1 + nuisance_params.get("{}_{}".format(k, self.params['name']), 0))
 
-            # DEBUG
-            # total_counts = 0
-            # for k in self.plot_hists.keys():
-            #     total_counts += np.sum(self.plot_hists[k][1])
-            #     print(k, np.sum(self.plot_hists[k][1]))
-            # print("total predicted", total_counts)
-            # print("total observed", np.sum(self.data_hist[1]))
 
         if set_data_hist:
             # this is for if we're calculating a new model/dataset
